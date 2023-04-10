@@ -47,12 +47,14 @@ class objectiveFunction:
     def __init__(self,
                 edges = None,
                 extWeights = None,
+                nFixedNodes = 0,
                 val = lambda: None,
                 grad = lambda: None,
                 hess = lambda: None
         ):
         self.edges = edges
         self.extWeights = extWeights
+        self.nFixedNodes = nFixedNodes
         self.val = val
         self.grad = grad
         self.hess = hess
@@ -61,7 +63,7 @@ class objectiveFunction:
         self.val(X,self.edges,self.extWeights)
     
     def getGrad(self,X):
-        self.grad(X,self.edges,self.extWeights)
+        self.grad(X,self.nFixedNodes,self.edges,self.extWeights)
     
     def getHess(self,X):
         self.hess(X,self.edges)
@@ -121,7 +123,11 @@ def gradEP5(X,nFixNode,edges,extWeights):
     extMassForce = np.zeros((n,3))
     extMassForce[:,2] = extWeights
 
-    return cableElasticityForce + extMassForce
+    nodesGradient = cableElasticityForce + extMassForce
+    if nFixNode > 0:
+        nodesGradient[0:nFixNode,:] = np.zeros(nFixNode,3)
     
-    
+    return nodesGradient
+
+E = objectiveFunction(edgesMatrix,extMassArr,M,valEP5,gradEP5)
 

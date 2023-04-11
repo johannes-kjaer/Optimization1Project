@@ -131,7 +131,6 @@ def gradEP5(X,nFixNode,edges,extWeights):
 
 E = objectiveFunction(edgesMatrix,extMassArr,M,valEP5,gradEP5)
 
-
 def stepLength(f, X_k, p_k, initAlpha = 1.0, c1 = 1e-2, c2 = 0.9, maxExtItr=50, maxBisItr=20):
     '''
     Function for calculating the step length alpha_k, provided a current X_k and a search_direction p_k.
@@ -210,6 +209,52 @@ def stepLength(f, X_k, p_k, initAlpha = 1.0, c1 = 1e-2, c2 = 0.9, maxExtItr=50, 
 
     return alpha_k
 
+def hessianBFGSapprox(H_k, s_k, y_k):
+    '''
+    A function for updating the hessian BFGS approximation for each step k.
+    
+    Input:
+    H_k: The current BFGS approximation to the hessian
+    s_k: The 'step vector', x_k1-x_k
+    y_k: The difference in the gradient over the step, del(f_k1) - del(f_k)
+    Output:
+    H_k1: The updated hessian BFGS approximation
+    '''
+
+    I = np.identity(np.size(H_k)[0]) # Constructing the Identity matrix of the same size as our hessian approximation matrix
+    rho_k = 1/(y_k.T @ s_k)          # Computing the constant rho_k once
+    H_k1 = (I-rho_k* s_k@y_k.T) @ H_k @ (I-rho_k* y_k@s_k.T) + rho_k* s_k@s_k.T # Returning the updated hessian BFGS approximation
+    return H_k1
+
+def BFGS(f, X_0, tol=1e-12, maxItr=100):
+    '''
+    The BFGS optimization method, minimizing a given function, using step lenghts satisfying the strong Wolfe conditions.
+    
+    Input:
+    f: The objective function to minimize
+    X_0: An initial guess at the solution
+    tol: The tolerance for the gradient deviating from the optimality condition of the gradient being equal to zero.
+    maxItr: The maximum number of iterations before the algorithm gives up.
+    '''
+
+    X_k, H_k, k = X_0, np.identity(X_0.size()), 0 # Setting initial values
+
+    grad_k = f.getGrad(X_k) # Precomputing the gradient at X_0
+
+    iterations = 0
+    while (np.norm(grad_k) > tol) and (maxItr>iterations):
+        p_k = -H_k @ grad_k         # Computing the search direction
+        alpha_k = stepLength(f,X_k,p_k)     # Computing a step length satisfying the strong Wolfe conditions
+        X_k1 = X_k + alpha_k*p_k            # Finding the next candidate solution X
+        grad_k1 = f.getGrad(X_k1)           # Computing the gradient at X_{k+1}
+        H_k1 = hessianBFGSapprox(H_k,X_k1-X_k,grad_k1)  # Computing the next hessian BFGS approximation
+
+        k, X_k, grad_k, H_k = k+1, X_k1, grad_k1, H_k1  # Updating the variables for a possible next iteration
+    if (iterations==maxItr):
+        print(f'The algorithm did not converge to any X within the tolerance {tol} in the course of {maxItr} iterations.')
+    
+    return X_k
+
+
 
     
-

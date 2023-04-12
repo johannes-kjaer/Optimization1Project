@@ -25,15 +25,17 @@ for i in range(N-1):
 ##### Making an external mass array #####
 extMassArr = np.zeros(N)
 for i in range(N-M,N): # Loading all free nodes with a mass
-    extMassArr = 1/6 # m_i * g
+    extMassArr[i] = 1/6 # m_i * g
 
 ##### Positioning the fixed nodes, as well as giving the free nodes initial positions #####
-pArray = np.array([ [5, 5, 0]
-                    [-5, 5, 0]
-                    [-5, -5, 0]
+pArray = np.array([ [5, 5, 0],
+                    [-5, 5, 0],
+                    [-5, -5, 0],
                     [5, -5, 0]
                 ])
-xInitialPos = np.zeros((4,3)) # As the problem is convex the inital guess does not matter much, so making it simple the free nodes are all placed at the origin
+initialPos = np.zeros((8,3)) # As the problem is convex the inital guess does not matter much, so making it simple the free nodes are all placed at the origin
+initialPos[0:4,:] = pArray
+X_0 = np.reshape(initialPos,(len(initialPos)*3))
 
 class objectiveFunction:
     '''
@@ -60,73 +62,72 @@ class objectiveFunction:
         self.hess = hess
     
     def getVal(self,X):
-        self.val(X,self.edges,self.extWeights)
+        return self.val(X,self.edges,self.extWeights)
     
     def getGrad(self,X):
-        self.grad(X,self.nFixedNodes,self.edges,self.extWeights)
+        return self.grad(X,self.nFixedNodes,self.edges,self.extWeights)
     
     def getHess(self,X):
-        self.hess(X,self.edges)
+        return self.hess(X,self.edges)
         
 def valEP5(X,edges,extWeights):
     '''
     Input:
-    X: 3xN array of N node positions
+    X: 3Nx1 array of N node positions
     edges: NxN array of lengths of cables connecting nodes. Zero lengths means there is no cable there.
     extWeights: Nx1 array of external mass at each node
     
     Output: The energy of the system in the given configuration X
     '''
-    n = edges.shape()[0] # Saving the number of nodes in a variable n
+    n = edges.shape[0] # Saving the number of nodes in a variable n
 
     cableElasticityEnergy = 0 # Variable to store the potential energy of the stretched cables
     for i in range(n-1):        # For each node,
         for j in range(i+1,n):  # access all other nodes once, no double counting
             l_ij = edges[i][j]  # Check the resting length of the cable
             if l_ij > 0:        # Checking if there is a cable between these two nodes - a zero resting length implies no cable between them
-                norm_ij = np.linalg.norm(X[i]-X[j]) # Check the current length between the nodes
+                norm_ij = np.linalg.norm(X[i*3:i*3+3]-X[j*3:j*3+3]) # Check the current length between the nodes
                 if norm_ij > l_ij: # If the current length between the nodes is greater than the resting length of the cable, then the cable is stretched and is contributing potential energy
                     cableElasticityEnergy += (norm_ij - l_ij)**2 * k/(2*l_ij**2) #Calculate the potential energy contribution of the cable
                 #else:
                 #    cableElasticityEnergy += 0 # If the cable is not stretched, it is contributing zero potential energy 
 
-    x_3Coordinates = X[:,2] # Extracting the column of the x_3 coordinates
+    x_3Coordinates = np.reshape(X,(n,3))[:,2] # Extracting the column of the x_3 coordinates
     extMassEnergy = np.dot(extWeights,x_3Coordinates) # Multiplying and summing all masses multiplied with g, and multiplying with the height above (or below) ground, giving the potential energy contribution from the external masses
-
     return cableElasticityEnergy + extMassEnergy
 
 def gradEP5(X,nFixNode,edges,extWeights):
     '''
     Input:
-    X: 3xN array of n node position
+    X: 3Nx1 array of n node position
     nFixNode: The number of fixed nodes
     edges: NxN array of lengths of cables connecting nodes. Zero lengths means there is no cable there.
     extWeights: Nx1 array of external mass at each node
     
-    Output: The 3X1 array with the gradient of the function at X
+    Output: The 3Nx1 array with the gradient of the function at X
     '''
-    n = edges.shape()[0] # Saving the number of nodes in a variable n
+    n = edges.shape[0] # Saving the number of nodes in a variable n
 
-    cableElasticityForce = np.zeros((n,3)) # Array to store the force from the stretched cables / the gradient of the energy function
+    cableElasticityForce = np.zeros(3*n) # Array to store the force from the stretched cables / the gradient of the energy function
+
     for i in range(n-1):        # For each node,
         for j in range(i+1,n):  # access all other nodes once, no double counting
             l_ij = edges[i][j]  # Check the resting length of the cable
             if l_ij > 0:        # Checking if there is a cable between these two nodes - a zero resting length implies no cable between them
-                norm_ij = np.linalg.norm(X[i]-X[j]) # Check the current length between the nodes
+                norm_ij = np.linalg.norm(X[i*3:i*3+3]-X[j*3:j*3+3]) # Check the current length between the nodes
                 if norm_ij > l_ij: # If the current length between the nodes is greater than the resting length of the cable, then the cable is stretched and is contributing a force
-                    forceContribution_ij = (norm_ij - l_ij)*(X[i]-X[j]) * k/l_ij**2 # Calculate the force contribution of the cable
-                    cableElasticityForce[i] += - forceContribution_ij   # As x_i - x_j is the vector from j to i, the pull on i from j is going to be the negative of the calculated force
-                    cableElasticityForce[j] += forceContribution_ij
-                #else:
-                #    cableElasticityForce += 0 # If the cable is not stretched, it is contributing no force 
-
+                    forceContribution_ij = (norm_ij - l_ij)*(X[i*3:i*3+3]-X[j*3:j*3+3]) * k/l_ij**2 # Calculate the force contribution of the cable
+                    cableElasticityForce[3*i:3*i+3] += - forceContribution_ij   # As x_i - x_j is the vector from j to i, the pull on i from j is going to be the negative of the calculated force
+                    cableElasticityForce[3*j:3*j+3] += forceContribution_ij
+    
     extMassForce = np.zeros((n,3))
     extMassForce[:,2] = extWeights
+    extMassForce = extMassForce.reshape((3*n))
 
     nodesGradient = cableElasticityForce + extMassForce
     if nFixNode > 0:
-        nodesGradient[0:nFixNode,:] = np.zeros(nFixNode,3)
-    
+        nodesGradient[0:nFixNode*3] = np.zeros((nFixNode*3))
+
     return nodesGradient
 
 E = objectiveFunction(edgesMatrix,extMassArr,M,valEP5,gradEP5)
@@ -157,10 +158,13 @@ def stepLength(f, X_k, p_k, initAlpha = 1.0, c1 = 1e-2, c2 = 0.9, maxExtItr=50, 
 
     initDescent = np.inner(p_k,grad_k) # Computing the initial descent along p_k
 
+    #print(grad_k)
     ### Precomputing the Strong Wolfe conditions as boolean values ###
-    armijo = f.getval(X_k1) <= val_k+c1*alphaUpper*np.dot(grad_k,p_k)
-    curvatureLow = np.inner(p_k,grad_k1) >= c2*initDescent
-    curvatureHigh = np.inner(p_k,grad_k1) <= -c2*initDescent
+    #print(f.getVal(X_k1),val_k+c1*alphaUpper*np.inner(grad_k,p_k))
+    armijo = (f.getVal(X_k1) <= val_k+c1*alphaUpper*np.inner(grad_k,p_k))
+    curvatureLow = (np.inner(p_k,grad_k1) >= c2*initDescent)
+    curvatureHigh = (np.inner(p_k,grad_k1) <= -c2*initDescent)
+    #print(armijo,curvatureHigh,curvatureLow)
 
     ##### Finding an interval whose upper end satisfies the armijo condition and the curvatureLow condition, which means the interval is long enough #####
     iterations = 0
@@ -198,7 +202,7 @@ def stepLength(f, X_k, p_k, initAlpha = 1.0, c1 = 1e-2, c2 = 0.9, maxExtItr=50, 
         grad_k1 = f.getGrad(X_k1)   # Computing the gradient at the new candidate step
 
         ### Recomputing the strong wolfe conditions for our new interval upper bound ###
-        armijo = f.getval(X_k1) <= val_k+c1*alphaUpper*np.dot(grad_k,p_k)
+        armijo = f.getVal(X_k1) <= val_k+c1*alphaUpper*np.dot(grad_k,p_k)
         curvatureLow = np.inner(p_k,grad_k1) >= c2*initDescent
         curvatureHigh = np.inner(p_k,grad_k1) <= -c2*initDescent
 
@@ -221,7 +225,7 @@ def hessianBFGSapprox(H_k, s_k, y_k):
     H_k1: The updated hessian BFGS approximation
     '''
 
-    I = np.identity(np.size(H_k)[0]) # Constructing the Identity matrix of the same size as our hessian approximation matrix
+    I = np.identity(np.size(H_k)) # Constructing the Identity matrix of the same size as our hessian approximation matrix
     rho_k = 1/(y_k.T @ s_k)          # Computing the constant rho_k once
     H_k1 = (I-rho_k* s_k@y_k.T) @ H_k @ (I-rho_k* y_k@s_k.T) + rho_k* s_k@s_k.T # Returning the updated hessian BFGS approximation
     return H_k1
@@ -232,17 +236,18 @@ def BFGS(f, X_0, tol=1e-12, maxItr=100):
     
     Input:
     f: The objective function to minimize
-    X_0: An initial guess at the solution
+    X_0: An 3Nx1 array initial guess at the solution
     tol: The tolerance for the gradient deviating from the optimality condition of the gradient being equal to zero.
     maxItr: The maximum number of iterations before the algorithm gives up.
     '''
 
-    X_k, H_k, k = X_0, np.identity(X_0.size()), 0 # Setting initial values
+    X_k, H_k, k = X_0, np.identity(X_0.shape[0]), 0 # Setting initial values
 
     grad_k = f.getGrad(X_k) # Precomputing the gradient at X_0
 
     iterations = 0
-    while (np.norm(grad_k) > tol) and (maxItr>iterations):
+    while (np.linalg.norm(grad_k) > tol) and (maxItr>iterations):
+        #print(H_k,"\n",grad_k)
         p_k = -H_k @ grad_k         # Computing the search direction
         alpha_k = stepLength(f,X_k,p_k)     # Computing a step length satisfying the strong Wolfe conditions
         X_k1 = X_k + alpha_k*p_k            # Finding the next candidate solution X
@@ -250,11 +255,18 @@ def BFGS(f, X_0, tol=1e-12, maxItr=100):
         H_k1 = hessianBFGSapprox(H_k,X_k1-X_k,grad_k1)  # Computing the next hessian BFGS approximation
 
         k, X_k, grad_k, H_k = k+1, X_k1, grad_k1, H_k1  # Updating the variables for a possible next iteration
+
     if (iterations==maxItr):
         print(f'The algorithm did not converge to any X within the tolerance {tol} in the course of {maxItr} iterations.')
     
     return X_k
 
+#print(BFGS(E,initialPos))
 
+def testCases():
+    print(f'The value of our function E at X_0 is: \n{E.getVal(X_0)}')
+    print(f'The gradient of E at X_0 is: \n{E.getGrad(X_0)}')
 
-    
+    print(BFGS(E,X_0))
+
+testCases()

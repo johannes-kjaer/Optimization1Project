@@ -170,16 +170,17 @@ def stepLength(f, X_k, p_k, initAlpha = 1.0, c1 = 1e-2, c2 = 0.9, maxExtItr=50, 
     iterations = 0
     while iterations<maxExtItr and ((armijo and curvatureHigh) and not curvatureLow):
         alphaLower = alphaUpper  # If the interval is to short, then we set the new lower bound to be the former upper bound
-        alphaUpper *= multiplier # Exapnding the interval to hopefully now be able to find a satisfactory alpha_k
+        alphaUpper *= multiplier # Expanding the interval to hopefully now be able to find a satisfactory alpha_k
 
         ### Updating values at X_k1 ###
         X_k1 = X_k + alphaUpper*p_k # Computing the new candidate step
         grad_k1 = f.getGrad(X_k1)   # Computing the gradient at the new candidate step
 
         ### Recomputing the strong wolfe conditions for our new interval upper bound ###
-        armijo = f.getval(X_k1) <= val_k+c1*alphaUpper*np.dot(grad_k,p_k)
+        armijo = f.getVal(X_k1) <= val_k+c1*alphaUpper*np.dot(grad_k,p_k)
         curvatureLow = np.inner(p_k,grad_k1) >= c2*initDescent
         curvatureHigh = np.inner(p_k,grad_k1) <= -c2*initDescent
+        #print(armijo,curvatureHigh,curvatureLow)
 
         iterations += 1
     
@@ -205,6 +206,7 @@ def stepLength(f, X_k, p_k, initAlpha = 1.0, c1 = 1e-2, c2 = 0.9, maxExtItr=50, 
         armijo = f.getVal(X_k1) <= val_k+c1*alphaUpper*np.dot(grad_k,p_k)
         curvatureLow = np.inner(p_k,grad_k1) >= c2*initDescent
         curvatureHigh = np.inner(p_k,grad_k1) <= -c2*initDescent
+        #print(armijo,curvatureHigh,curvatureLow)
 
         iterations += 1
     
@@ -225,12 +227,14 @@ def hessianBFGSapprox(H_k, s_k, y_k):
     H_k1: The updated hessian BFGS approximation
     '''
 
-    I = np.identity(np.size(H_k)) # Constructing the Identity matrix of the same size as our hessian approximation matrix
+    I = np.identity(np.shape(H_k)[0]) # Constructing the Identity matrix of the same size as our hessian approximation matrix
     rho_k = 1/(y_k.T @ s_k)          # Computing the constant rho_k once
+    #print(I.shape)
+    #print(I,'\n',rho_k,'\n',s_k,'\n',y_k,'\n',H_k)
     H_k1 = (I-rho_k* s_k@y_k.T) @ H_k @ (I-rho_k* y_k@s_k.T) + rho_k* s_k@s_k.T # Returning the updated hessian BFGS approximation
     return H_k1
 
-def BFGS(f, X_0, tol=1e-12, maxItr=100):
+def BFGS(f, X_0, tol=1e-12, maxItr=20):
     '''
     The BFGS optimization method, minimizing a given function, using step lenghts satisfying the strong Wolfe conditions.
     
@@ -240,21 +244,28 @@ def BFGS(f, X_0, tol=1e-12, maxItr=100):
     tol: The tolerance for the gradient deviating from the optimality condition of the gradient being equal to zero.
     maxItr: The maximum number of iterations before the algorithm gives up.
     '''
+    N = X_0.shape[0] # Number of nodes in total
+    M = f.nFixedNodes # Number of fixed nodes
 
-    X_k, H_k, k = X_0, np.identity(X_0.shape[0]), 0 # Setting initial values
+    X_k, k = X_0, 0 # Setting initial values
+    H_k = np.identity(N)
 
     grad_k = f.getGrad(X_k) # Precomputing the gradient at X_0
 
     iterations = 0
     while (np.linalg.norm(grad_k) > tol) and (maxItr>iterations):
         #print(H_k,"\n",grad_k)
+        #print(grad_k)
         p_k = -H_k @ grad_k         # Computing the search direction
         alpha_k = stepLength(f,X_k,p_k)     # Computing a step length satisfying the strong Wolfe conditions
+        print(p_k)
         X_k1 = X_k + alpha_k*p_k            # Finding the next candidate solution X
         grad_k1 = f.getGrad(X_k1)           # Computing the gradient at X_{k+1}
         H_k1 = hessianBFGSapprox(H_k,X_k1-X_k,grad_k1)  # Computing the next hessian BFGS approximation
 
         k, X_k, grad_k, H_k = k+1, X_k1, grad_k1, H_k1  # Updating the variables for a possible next iteration
+
+        iterations += 1
 
     if (iterations==maxItr):
         print(f'The algorithm did not converge to any X within the tolerance {tol} in the course of {maxItr} iterations.')

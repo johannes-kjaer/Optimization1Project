@@ -85,7 +85,7 @@ def StrongWolfe(f,x,p,
     # computations anyway)
     return alphaR #next_x,next_value,next_grad
 
-def stepLength(f, X_k, p_k, initAlpha = 1.0, c1 = 1e-2, c2 = 0.9, maxExtItr=500, maxBisItr=500):
+def stepLength(f, X_k, p_k, initAlpha = 1.0, c1 = 1e-2, c2 = 0.9, maxExtItr=50, maxBisItr=20):
     '''
     Function for calculating the step length alpha_k, provided a current X_k and a search_direction p_k.
     Using extrapolation and bisectioning to find a step length satisfying the strong Wolfe conditions.
@@ -179,7 +179,7 @@ def BFGS(f,X_0,
     while np.linalg.norm(grad_k) > tol and k < maxItr:
         p_k = -H_k @ grad_k     # Updating the search direction
         descent_k = np.inner(p_k,grad_k)
-        alpha_k = StrongWolfe(f,X_k,p_k,val_k,descent_k) # lineSearch()  # Finding a step length satisfying the Wolfe conditions
+        alpha_k = stepLength(f,X_k,p_k,val_k,descent_k) # Finding a step length satisfying the Wolfe conditions
         X_k1 = X_k + alpha_k * p_k  # Taking the step along p_k with step length alpha_k
         
         grad_k1 = f.getGrad(X_k1)   # Finding the gradient at the new X_k

@@ -4,11 +4,12 @@ import objectiveFunctions
 
 def main():
     ### Testing that the function is yielding the correct values at the analytical solution ###
-    objectiveFunctions.testFunction()
+    #objectiveFunctions.testFunction()
 
-    print(BFGS.BFGS(objectiveFunctions.testOF,np.array([0,0,0])))
+    #print(BFGS.BFGS(objectiveFunctions.testOF,np.array([0,0,0])))
     
-    X_0 = np.zeros(4*3)
-    #print(BFGS.BFGS(objectiveFunctions.P5,X_0))
+    X_0 = np.zeros(4*3) # An initial guess, which should not matter to much as the problem is convex
+    X_star = np.array([2, 2, -3/2,-2, 2, -3/2,-2, -2, -3/2,2, -2, -3/2])    # The analytical solution
+    print(BFGS.BFGS(objectiveFunctions.P5,X_0))                          # Calling the method and printing the result
 
 main()

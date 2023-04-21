@@ -124,6 +124,30 @@ def P5fixedNodes():
 P5 = objectiveFunction(3,P5edges(),P5weights(),P5fixedNodes(),P5val,P5grad) # Gathering the different stationary parts of our problem into one objective function
 ########## --------- ##########
 
+########## Problem 9 ##########
+def P9val(X,c,grho,k,fixedNodes,bars,cables,extWeights):
+    ### The potential energy from the cables and external loads are the same as if the system consisted of only cables
+    EcablesAndExternalMasses = P5val(X,k,fixedNodes,cables,extWeights)
+
+    def P9bars(X,c,grho,fixedNodes,bars):
+        M = fixedNodes.size//3 # The number of fixed nodes
+        N = X.size//3 + M
+        allNodes = np.zeros(3*N)                 # Gathering the free
+        allNodes[fixedNodes.size:] = X           # and the fixed nodes
+        allNodes[:fixedNodes.size] = fixedNodes  # into one array
+
+        E_pot = 0   # Initializing a variable for storing the potential energy
+        for i in range(N-1):
+            for j in range(i+1,N):
+                l_ij = bars[i][j]                           # Extracting the resting length of the bar
+                if l_ij > 0:                                # Only proceed if there is a bar between the nodes
+                    norm_ij = np.linalg.norm(allNodes[3*i:3*i+3]-allNodes[3*j:3*j+3])   # Compute the length between the nodes
+                    E_pot += c/(2*l_ij**2) * (norm_ij - l_ij)**2 + grho*l_ij/2 * (allNodes[3*i+2]+allNodes[3*j+2])
+        return E_pot
+    Ebars = P9bars(X,c,grho,fixedNodes,bars)
+
+    return Ebars + EcablesAndExternalMasses
+
 ########## Test function ##########
 def testFunction():
     X_star = np.array([2, 2, -3/2,-2, 2, -3/2,-2, -2, -3/2,2, -2, -3/2]) # The analytical solution to the problem.

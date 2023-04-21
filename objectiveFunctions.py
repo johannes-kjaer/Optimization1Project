@@ -31,7 +31,28 @@ class objectiveFunction:
 
 ########## Problem 5 ##########
 def P5val(X,k,fixedNodes,edges,extWeights):
+    '''
+    Function for calculating the potential energy of the system in a given configuration X.
+    Input:
+    X: A 3n array with the configuration of nodes to be evaluated, where n is the number of free nodes
+    k: A constant pertaining to the elasticity of the cables
+    fixedNodes: A 3m array with the positions of the fixed nodes, where m is the number of fixed nodes
+    edges: A NxN matrix holding the resting lengths of the cables, where N is the total number of nodes
+    extWeights: An array of size n holding the external loads on the free nodes, multiplied by g
+    Output:
+    The potential energy of the system in the configuration X, float number
+    '''
     def P5cables(X,k,fixedNodes,edges):
+        '''
+        Function for calculating the potential energy due to stretched cables
+        Input:
+        X: A 3n array with the configuration of nodes to be evaluated, where n is the number of free nodes
+        k: A constant pertaining to the elasticity of the cables
+        fixedNodes: A 3m array with the positions of the fixed nodes, where m is the number of fixed nodes
+        edges: A NxN matrix holding the resting lengths of the cables, where N is the total number of nodes
+        Output:
+        The potential energy of the system due to stretched cables, float number
+        '''
         M = fixedNodes.size//3 # The number of fixed nodes
         N = X.size//3 + M
         allNodes = np.zeros(3*N)        # Gathering the free
@@ -50,11 +71,30 @@ def P5val(X,k,fixedNodes,edges,extWeights):
         return E_pot * k/2      # Return the potential energy from the stretched cables
     
     def P5weights(X,extWeights):
+        '''
+        Function for calculating the potential energy due to external loads
+        Input:
+        X: A 3n array with the configuration of nodes to be evaluated, where n is the number of free nodes
+        extWeights: An array of size n holding the external loads on the free nodes, multiplied by g
+        Output:
+        The potential energy of the system due to external loads, float number
+        '''
         X_3coordinates = (X.reshape((3,X.size//3)))[2]  # Retrieving the z coordinates of the free nodes
         return np.inner(extWeights,X_3coordinates)      # Return the sum of the potential energy due to gravity (Assuming the weights are already mulitplied by g)
     
     return P5cables(X,k,fixedNodes,edges) + P5weights(X,extWeights)   # Return the sum of the potential energy from both the stretched cables, and gravity's pull on the loaded nodes
 def P5grad(X,k,fixedNodes,edges,extWeights):
+    '''
+    Function for calculating the gradient of the system in X.
+    Input:
+    X: A 3n array with the configuration of nodes to be evaluated, where n is the number of free nodes
+    k: A constant pertaining to the elasticity of the cables
+    fixedNodes: A 3m array with the positions of the fixed nodes, where m is the number of fixed nodes
+    edges: A NxN matrix holding the resting lengths of the cables, where N is the total number of nodes
+    extWeights: An array of size n holding the external loads on the free nodes, multiplied by g
+    Output:
+    The gradient of the system due to stretched cables and external loads
+    '''
     def P5cables(X,k,fixedNodes,edges):
         M = fixedNodes.size//3  # The number of fixed nodes
         N = M + X.size//3       # The total number of nodes
@@ -126,10 +166,35 @@ P5 = objectiveFunction(3,P5edges(),P5weights(),P5fixedNodes(),P5val,P5grad) # Ga
 
 ########## Problem 9 ##########
 def P9val(X,c,grho,k,fixedNodes,bars,cables,extWeights):
+    '''
+    Function for calculating the potential energy of the system in a given configuration X.
+    Input:
+    X: A 3n array with the configuration of nodes to be evaluated, where n is the number of free nodes
+    c: A constant pertaining to the elasticity of the bars
+    grho: The density of the bars multiplied by the gravitational acceleration at earths surface
+    k: A constant pertaining to the elasticity of the cables
+    fixedNodes: A 3m array with the positions of the fixed nodes, where m is the number of fixed nodes
+    bars: A NxN matrix holding the resting lengths of the bars, where N is the total number of nodes
+    cables: A NxN matrix holding the resting lengths of the cables, where N is the total number of nodes
+    extWeights: An array of size n holding the external loads on the free nodes, multiplied by g
+    Output:
+    The potential energy of the system in the configuration X, float
+    '''
+
     ### The potential energy from the cables and external loads are the same as if the system consisted of only cables
     EcablesAndExternalMasses = P5val(X,k,fixedNodes,cables,extWeights)
 
     def P9bars(X,c,grho,fixedNodes,bars):
+        '''
+        Function for calculating the potential energy due to stretched bars and their weight
+        Input:
+        X: A 3n array with the configuration of nodes to be evaluated, where n is the number of free nodes
+        c: A constant pertaining to the elasticity of the bars
+        fixedNodes: A 3m array with the positions of the fixed nodes, where m is the number of fixed nodes
+        bars: A NxN matrix holding the resting lengths of the bars, where N is the total number of nodes
+        Output:
+        The potential energy of the system due to the bars, float
+        '''
         M = fixedNodes.size//3 # The number of fixed nodes
         N = X.size//3 + M
         allNodes = np.zeros(3*N)                 # Gathering the free

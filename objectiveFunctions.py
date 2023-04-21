@@ -1,7 +1,7 @@
 import numpy as np
 
 ##### Making a objectiveFunction class for all the particularities of the given problems #####
-class objectiveFunction:
+class objectiveFunctionP5:
     '''
     Class to make objective functions, containing the function as well as maybe its gradient and hessian.
     
@@ -10,24 +10,29 @@ class objectiveFunction:
     grad: The gradient of our function
     hess: The hessian of our function
     '''
-    def __init__(self,
-                k = 1,
-                edges = None,
-                extWeights = None,
-                fixedNodes = None,
-                val = lambda: None,
-                grad = lambda: None
-        ):
+    def __init__(self, k=1, cables=None, extWeights=None, fixedNodes=None, val=lambda: None, grad=lambda: None):
         self.k = k
-        self.edges = edges
+        self.cables = cables
         self.extWeights = extWeights
         self.fixedNodes = fixedNodes
         self.val = val
         self.grad = grad
     def getVal(self,X):
-        return self.val(X,self.k,self.fixedNodes,self.edges,self.extWeights)
+        return self.val(X,self.k,self.fixedNodes,self.cables,self.extWeights)
     def getGrad(self,X):
-        return self.grad(X,self.k,self.fixedNodes,self.edges,self.extWeights)
+        return self.grad(X,self.k,self.fixedNodes,self.cables,self.extWeights)
+
+class objectiveFunctionP9(objectiveFunctionP5):
+    def __init__(self, c=1, grho=1, k=1, bars=None, cables=None, extWeights=None, fixedNodes=None, val=lambda : None, grad=lambda : None):
+        super().__init__(k, cables, extWeights, fixedNodes, val, grad)
+        self.c = c
+        self.grho=grho
+        self.bars = bars
+    def getVal(self,X):
+        return self.val(X,self.c,self.grho,self.k,self.fixedNodes,self.bars,self.cables,self.extWeights)
+    def getGrad(self,X):
+        return self.grad(X,self.c,self.grho,self.k,self.fixedNodes,self.bars,self.cables,self.extWeights)
+
 
 ########## Problem 5 ##########
 def P5val(X,k,fixedNodes,edges,extWeights):
@@ -161,7 +166,7 @@ def P5fixedNodes():
                      [-5, -5, 0],
                      [5, -5, 0]
     ]).reshape(M*3)
-P5 = objectiveFunction(3,P5edges(),P5weights(),P5fixedNodes(),P5val,P5grad) # Gathering the different stationary parts of our problem into one objective function
+P5 = objectiveFunctionP5(3,P5edges(),P5weights(),P5fixedNodes(),P5val,P5grad) # Gathering the different stationary parts of our problem into one objective function
 ########## --------- ##########
 
 ########## Problem 9 ##########
@@ -278,7 +283,16 @@ def P9edges():
     cables[0][7], cables[1][4], cables[2][5], cables[3][6] = 8,8,8,8
     cables[4][5], cables[5][6], cables[6][7], cables[4][7] = 1,1,1,1
 
-    return bars, cables 
+    return (bars, cables)
+def P9weights():
+    return np.ones(4) * 0
+def P9fixedNodes():
+    return np.array(   [[1, 1, 0],
+                        [-1, 1, 0],
+                        [-1, -1, 0],
+                        [1, -1, 0]]
+                    ).reshape(3*4)
+P9 = objectiveFunctionP9(1,0,0.1,P9edges()[0],P9edges()[1],P9weights(),P9fixedNodes(),P9val,P9grad)
 
 ########## Test function ##########
 def testFunction():
@@ -289,4 +303,4 @@ def testFunction():
 
 #testFunction()
 
-testOF = objectiveFunction(3,np.array([[0,0,1],[0,0,1],[1,1,0]]),np.array([1]),np.array([1,0,3,-1,0,3]),P5val,P5grad)
+testOF = objectiveFunctionP5(3,np.array([[0,0,1],[0,0,1],[1,1,0]]),np.array([1]),np.array([1,0,3,-1,0,3]),P5val,P5grad)

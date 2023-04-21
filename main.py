@@ -19,9 +19,13 @@ def P5():
     #print(gradientDescent.gradientDescent(objectiveFunctions.testOF.getVal,objectiveFunctions.testOF.getGrad,np.zeros(3)))
 
 def P9():
-    pass
+    X_0 = np.zeros(3*4)
+    X_star = np.array([-0.70970,0,9.54287,0,-0.70970,9.54287,0.70970,0,9.54287,0,0.70970,9.54287])
+    X_something = np.array([-0.3,1,8,-1,-0.7,9,7,3,5,1,1,9])
+    print(BFGS.BFGS(objectiveFunctions.P9.getVal,objectiveFunctions.P9.getGrad,X_something,maxItr=100))
 
 def main():
-    P5()
+    #P5()
+    P9()
 
 main()

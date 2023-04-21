@@ -167,6 +167,8 @@ def P5fixedNodes():
                      [5, -5, 0]
     ]).reshape(M*3)
 P5 = objectiveFunctionP5(3,P5edges(),P5weights(),P5fixedNodes(),P5val,P5grad) # Gathering the different stationary parts of our problem into one objective function
+
+testOF = objectiveFunctionP5(3,np.array([[0,0,1],[0,0,1],[1,1,0]]),np.array([1]),np.array([1,0,3,-1,0,3]),P5val,P5grad)
 ########## --------- ##########
 
 ########## Problem 9 ##########
@@ -260,14 +262,13 @@ def P9grad(X,c,grho,k,fixedNodes,bars,cables,extWeights):
                 l_ij = bars[i][j]  # Extracting the resting length of the bar between node i and j
                 if l_ij > 0:        # If there is a bar between the nodes, then proceed
                     norm_ij = np.linalg.norm(allNodes[i*3:i*3+3] - allNodes[j*3:j*3+3])
-                    if norm_ij != l_ij: # Making sure, one hundred percent, that we are not going to divide by zero
-                        forceContribkj = (allNodes[i*3:i*3+3]-allNodes[j*3:j*3+3]) *(1-l_ij/norm_ij) *c/l_ij**2  +  grho*l_ij/2 * np.array([0,0,1])
+                    if norm_ij != 0: # Making sure, one hundred percent, that we are not going to divide by zero
+                        forceContribkj = (allNodes[i*3:i*3+3]-allNodes[j*3:j*3+3])  * (1-l_ij/norm_ij) *c/l_ij**2  +  grho*l_ij/2 * np.array([0,0,1])
                         subGradientk += forceContribkj
             force_bars[3*(i-M):3*(i-M+1)] = subGradientk
         return force_bars
     
     gradBars = P9bars(X,c,grho,fixedNodes,bars)
-
     return gradBars + gradCablesAndExtWeight
 def P9edges():
     '''
@@ -302,5 +303,3 @@ def testFunction():
 
 
 #testFunction()
-
-testOF = objectiveFunctionP5(3,np.array([[0,0,1],[0,0,1],[1,1,0]]),np.array([1]),np.array([1,0,3,-1,0,3]),P5val,P5grad)

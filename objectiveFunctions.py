@@ -35,8 +35,8 @@ def P5val(X,k,fixedNodes,edges,extWeights):
         M = fixedNodes.size//3 # The number of fixed nodes
         N = X.size//3 + M
         allNodes = np.zeros(3*N)        # Gathering the free
-        allNodes[X.size:] = X           # and the fixed nodes
-        allNodes[:X.size] = fixedNodes  # into one array
+        allNodes[fixedNodes.size:] = X           # and the fixed nodes
+        allNodes[:fixedNodes.size] = fixedNodes  # into one array
 
         E_pot = 0   # Initializing a variable for storing the potential energy
         for i in range(N-1):
@@ -60,8 +60,8 @@ def P5grad(X,k,fixedNodes,edges,extWeights):
         N = M + X.size//3       # The total number of nodes
 
         allNodes = np.zeros(3*N)        # Gathering the free
-        allNodes[X.size:] = X           # and the fixed nodes
-        allNodes[:X.size] = fixedNodes  # into one array
+        allNodes[fixedNodes.size:] = X           # and the fixed nodes
+        allNodes[:fixedNodes.size] = fixedNodes  # into one array
 
         force_cables = np.zeros(X.size) # The gradient of potential energy is a force
         for i in range(M,N):
@@ -133,4 +133,4 @@ def testFunction():
 
 #testFunction()
 
-testOF = objectiveFunction(3,np.array([[0,1],[1,0]]),np.array([1]),np.array([0,0,3]),P5val,P5grad)
+testOF = objectiveFunction(3,np.array([[0,0,1],[0,0,1],[1,1,0]]),np.array([1]),np.array([1,0,3,-1,0,3]),P5val,P5grad)

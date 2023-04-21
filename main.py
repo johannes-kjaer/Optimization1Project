@@ -11,8 +11,11 @@ def main():
     
     X_0 = np.zeros(4*3) # An initial guess, which should not matter to much as the problem is convex
     #X_star = np.array([2, 2, -3/2,-2, 2, -3/2,-2, -2, -3/2,2, -2, -3/2])    # The analytical solution
-    #print(BFGS.BFGS(objectiveFunctions.P5,X_0))                          # Calling the method and printing the result
+    print(BFGS.BFGS(objectiveFunctions.P5,X_0))                          # Calling the method and printing the result
 
     print(gradientDescent.gradientDescent(objectiveFunctions.P5.getVal,objectiveFunctions.P5.getGrad,X_0,maxSteps=5000))
+
+    #print(BFGS.BFGS(objectiveFunctions.testOF,np.zeros(3))) # This problem seems to produce actual results
+    #print(gradientDescent.gradientDescent(objectiveFunctions.testOF.getVal,objectiveFunctions.testOF.getGrad,np.zeros(3)))
 
 main()

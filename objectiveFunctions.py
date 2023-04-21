@@ -212,6 +212,73 @@ def P9val(X,c,grho,k,fixedNodes,bars,cables,extWeights):
     Ebars = P9bars(X,c,grho,fixedNodes,bars)
 
     return Ebars + EcablesAndExternalMasses
+def P9grad(X,c,grho,k,fixedNodes,bars,cables,extWeights):
+    '''
+    Function for calculating the gradient of the system in X.
+    Input:
+    X: A 3n array with the configuration of nodes to be evaluated, where n is the number of free nodes
+    c: A constant pertaining to the elasticity of the bars
+    grho: The density of the bars multiplied by the gravitational acceleration at earths surface
+    k: A constant pertaining to the elasticity of the cables
+    fixedNodes: A 3m array with the positions of the fixed nodes, where m is the number of fixed nodes
+    bars: A NxN matrix holding the resting lengths of the bars, where N is the total number of nodes
+    cables: A NxN matrix holding the resting lengths of the cables, where N is the total number of nodes
+    extWeights: An array of size n holding the external loads on the free nodes, multiplied by g
+    Output:
+    The gradient of the system
+    '''
+    ### The gradient contribution from stretched cables and external loads is the same as calculated for a cable net
+    gradCablesAndExtWeight = P5grad(X,k,fixedNodes,cables,extWeights)
+
+    def P9bars(X,c,grho,fixedNodes,bars):
+        '''
+        Function for calculating the gradient in X due to stretched or compressed bars
+        Input:
+        X: A 3n array with the configuration of nodes to be evaluated, where n is the number of free nodes
+        c: A constant pertaining to the elasticity of the bars
+        fixedNodes: A 3m array with the positions of the fixed nodes, where m is the number of fixed nodes
+        bars: A NxN matrix holding the resting lengths of the bars, where N is the total number of nodes
+        Output:
+        The force on X contributed by the stretched and compressed bars
+        '''
+        M = fixedNodes.size//3  # The number of fixed nodes
+        N = M + X.size//3       # The total number of nodes
+
+        allNodes = np.zeros(3*N)        # Gathering the free
+        allNodes[fixedNodes.size:] = X           # and the fixed nodes
+        allNodes[:fixedNodes.size] = fixedNodes  # into one array
+
+        force_bars = np.zeros(X.size) # The gradient of potential energy is a force
+        for i in range(M,N):
+            subGradientk = np.zeros(3)  # For each node k (i) the gradient may be calculated separately by calculating the force on the node
+            for j in range(N):
+                l_ij = bars[i][j]  # Extracting the resting length of the bar between node i and j
+                if l_ij > 0:        # If there is a bar between the nodes, then proceed
+                    norm_ij = np.linalg.norm(allNodes[i*3:i*3+3] - allNodes[j*3:j*3+3])
+                    if norm_ij != l_ij: # Making sure, one hundred percent, that we are not going to divide by zero
+                        forceContribkj = (allNodes[i*3:i*3+3]-allNodes[j*3:j*3+3]) *(1-l_ij/norm_ij) *c/l_ij**2  +  grho*l_ij/2 * np.array([0,0,1])
+                        subGradientk += forceContribkj
+            force_bars[3*(i-M):3*(i-M+1)] = subGradientk
+        return force_bars
+    
+    gradBars = P9bars(X,c,grho,fixedNodes,bars)
+
+    return gradBars + gradCablesAndExtWeight
+def P9edges():
+    '''
+    Function for producing the matrices containing the resting lengths of the bars and cables
+    Output:
+    bars: 8x8 matrix containing the resting lenght of the bars
+    cables: 8x8 matrix containing the resting lenght of the cables
+    '''
+    bars = np.zeros((8,8))
+    cables = bars
+
+    bars[0][4], bars[1][5], bars[2][6], bars[3][7] = 10, 10, 10, 10
+    cables[0][7], cables[1][4], cables[2][5], cables[3][6] = 8,8,8,8
+    cables[4][5], cables[5][6], cables[6][7], cables[4][7] = 1,1,1,1
+
+    return bars, cables 
 
 ########## Test function ##########
 def testFunction():

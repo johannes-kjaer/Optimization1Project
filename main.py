@@ -3,7 +3,7 @@ import BFGS
 import objectiveFunctions
 import gradientDescent
 
-def main():
+def P5():
     ### Testing that the function is yielding the correct values at the analytical solution ###
     #objectiveFunctions.testFunction()
 
@@ -17,5 +17,11 @@ def main():
 
     #print(BFGS.BFGS(objectiveFunctions.testOF.getVal,objectiveFunctions.testOF.getGrad,np.zeros(3))) # This problem seems to produce actual results
     #print(gradientDescent.gradientDescent(objectiveFunctions.testOF.getVal,objectiveFunctions.testOF.getGrad,np.zeros(3)))
+
+def P9():
+    pass
+
+def main():
+    P5()
 
 main()

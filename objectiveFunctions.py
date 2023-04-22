@@ -296,9 +296,13 @@ def P9fixedNodes():
 P9 = objectiveFunctionP9(1,0,0.1,P9edges()[0],P9edges()[1],P9weights(),P9fixedNodes(),P9val,P9grad)
 
 ########## Test function ##########
-def testFunction(P,X):
-    print(f'----------\nE_P5={P.getVal(X)}=={7/6}')  # The value of the function at X^* should be about 7/6
-    print(P.getGrad(X),'\n----------') # The gradient should equal zero at X^*
+def testP5():
+    X_star = np.array([2, 2, -3/2,-2, 2, -3/2,-2, -2, -3/2,2, -2, -3/2])    # The analytical solution
+    print(f'-------------------------\nThe value of the function at the analytical solution. It should be about equal to {7/6}.\nE_P5={P5.getVal(X_star)}')  # The value of the function at X^* should be about 7/6
+    print(f'The gradient at the analytical solution')
+    print(P5.getGrad(X_star),'\n-------------------------') # The gradient should equal zero at X^*
 
-
-#testFunction()
+def testP9():
+    X_star = np.array([-0.70970,0,9.54287,0,-0.70970,9.54287,0.70970,0,9.54287,0,0.70970,9.54287]) # The approximate analytical solution of problem 9
+    print(f'-------------------------\nThe gradient at the analytical solution')
+    print(P9.getGrad(X_star),'\n-------------------------')

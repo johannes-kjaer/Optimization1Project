@@ -111,7 +111,6 @@ def BFGS(f_val,f_grad,X_0,
 
     if k == maxItr:
         print(f'The algorithm did not converge after {k} iterations. norm={np.linalg.norm(grad_k)}>{tol}=tol')
-        print(grad_k)
     else:
         print(f'The algorithm converged after {k} iterations.')
 

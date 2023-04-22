@@ -263,7 +263,7 @@ def P9grad(X,c,grho,k,fixedNodes,bars,cables,extWeights):
                 if l_ij > 0:        # If there is a bar between the nodes, then proceed
                     norm_ij = np.linalg.norm(allNodes[i*3:i*3+3] - allNodes[j*3:j*3+3])
                     if norm_ij != 0: # Making sure, one hundred percent, that we are not going to divide by zero
-                        forceContribkj = (allNodes[i*3:i*3+3]-allNodes[j*3:j*3+3])  * (1-l_ij/norm_ij) *c/l_ij**2  +  grho*l_ij/2 * np.array([0,0,1])
+                        forceContribkj = (allNodes[i*3:i*3+3]-allNodes[j*3:j*3+3])  * (1-l_ij/norm_ij) * c/l_ij**2  +  grho*l_ij/2 * np.array([0,0,1])
                         subGradientk += forceContribkj
             force_bars[3*(i-M):3*(i-M+1)] = subGradientk
         return force_bars
@@ -278,11 +278,11 @@ def P9edges():
     cables: 8x8 matrix containing the resting lenght of the cables
     '''
     bars = np.zeros((8,8))
-    cables = bars
+    cables = np.zeros((8,8))
 
-    bars[0][4], bars[1][5], bars[2][6], bars[3][7] = 10, 10, 10, 10
-    cables[0][7], cables[1][4], cables[2][5], cables[3][6] = 8,8,8,8
-    cables[4][5], cables[5][6], cables[6][7], cables[4][7] = 1,1,1,1
+    bars[0][4], bars[1][5], bars[2][6], bars[3][7], bars[4][0], bars[5][1], bars[6][2], bars[7][3] = 10, 10, 10, 10, 10, 10, 10, 10
+    cables[0][7], cables[1][4], cables[2][5], cables[3][6], cables[7][0], cables[4][1], cables[5][2], cables[6][3]  = 8,8,8,8,8,8,8,8
+    cables[4][5], cables[5][6], cables[6][7], cables[4][7], cables[5][4], cables[6][5], cables[7][6], cables[7][4] = 1,1,1,1,1,1,1,1
 
     return (bars, cables)
 def P9weights():
@@ -296,10 +296,9 @@ def P9fixedNodes():
 P9 = objectiveFunctionP9(1,0,0.1,P9edges()[0],P9edges()[1],P9weights(),P9fixedNodes(),P9val,P9grad)
 
 ########## Test function ##########
-def testFunction():
-    X_star = np.array([2, 2, -3/2,-2, 2, -3/2,-2, -2, -3/2,2, -2, -3/2]) # The analytical solution to the problem.
-    print(f'----------\nE_P5={P5.getVal(X_star)}=={7/6}')  # The value of the function at X^* should be about 7/6
-    print(P5.getGrad(X_star),'\n----------') # The gradient should equal zero at X^*
+def testFunction(P,X):
+    print(f'----------\nE_P5={P.getVal(X)}=={7/6}')  # The value of the function at X^* should be about 7/6
+    print(P.getGrad(X),'\n----------') # The gradient should equal zero at X^*
 
 
 #testFunction()
